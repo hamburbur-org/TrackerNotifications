@@ -53,12 +53,6 @@ public class Plugin : BaseUnityPlugin
 
         trackerWebSocket.OnClose += (sender, closeEventArgs) => trackerWebSocket.ConnectAsync();
         trackerWebSocket.ConnectAsync();
-
-        lock (receivedMessages)
-        {
-            receivedMessages.Enqueue(new TrackingData(true, true, "Hamburbur", "Hamburbur", "Hamburbur", "Hamburbur",
-                    10, "Hamburbur").ToJson());
-        }
     }
 
     private void ParseAndReceiveMessage(string data)

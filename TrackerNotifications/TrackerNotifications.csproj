@@ -9,7 +9,7 @@
         <Reference Include="0Harmony">
             <HintPath>$(BepInExAssemblyPath)\0Harmony.dll</HintPath>
         </Reference>
-        <Reference Include="Assembly-CSharp">
+        <Reference Include="Assembly-CSharp" Publicize="True">
             <HintPath>$(GameAssemblyPath)\Assembly-CSharp.dll</HintPath>
         </Reference>
         <Reference Include="Assembly-CSharp-firstpass">
@@ -26,6 +26,9 @@
         </Reference>
         <Reference Include="Cinemachine">
             <HintPath>$(GameAssemblyPath)\Unity.Cinemachine.dll</HintPath>
+        </Reference>
+        <Reference Include="GorillaNotifications">
+            <HintPath>$(PluginsPath)\GorillaNotifications\GorillaNotifications.dll</HintPath>
         </Reference>
         <Reference Include="Mono.Security">
             <HintPath>$(GameAssemblyPath)\Mono.Security.dll</HintPath>
@@ -287,6 +290,5 @@
 
     <ItemGroup>
         <None Remove="Resources\trackernotifications"/>
-        <EmbeddedResource Include="Resources\trackernotifications"/>
     </ItemGroup>
 </Project>

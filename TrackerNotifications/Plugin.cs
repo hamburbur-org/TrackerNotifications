@@ -1,31 +1,38 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
-using System.IO;
-using System.Reflection;
+using System.Linq;
 using BepInEx;
+using GorillaNotifications;
+using HarmonyLib;
 using Newtonsoft.Json.Linq;
 using Photon.Pun;
-using UnityEngine;
+using UnityEngine.Networking;
 using WebSocketSharp;
 
 namespace TrackerNotifications;
 
+[BepInIncompatibility("hansolo1000falcon.zlothy.hamburbur")]
 [BepInPlugin(Constants.PluginGuid, Constants.PluginName, Constants.PluginVersion)]
 public class Plugin : BaseUnityPlugin
 {
-    // doing it like this with a queue so its on the main thread instead of the network thread (yuck)
+    // doing it like this with a queue so it's on the main thread instead of the network thread (yuck)
     private readonly Queue<string> receivedMessages = new();
     private readonly WebSocket     trackerWebSocket = new("wss://hamburbur.org/tracker");
+    private static          JObject       cachedData;
 
-    public static AssetBundle NotificationBundle { get; private set; }
-
-    private void Start() => GorillaTagger.OnPlayerSpawned(OnGameInitialized);
+    private void Start()
+    {
+        GorillaTagger.OnPlayerSpawned(OnGameInitialized);
+#if GC_TRACKER
+        
+#else
+        new Harmony(Constants.PluginGuid).PatchAll();
+#endif
+    }
 
     private void Update()
     {
-        if (NotificationLib.Instance == null)
-            return;
-
         lock (receivedMessages)
         {
             while (receivedMessages.Count > 0)
@@ -35,14 +42,6 @@ public class Plugin : BaseUnityPlugin
 
     private void OnGameInitialized()
     {
-        Stream bundleStream = Assembly.GetExecutingAssembly()
-                                      .GetManifestResourceStream("TrackerNotifications.Resources.trackernotifications");
-
-        NotificationBundle = AssetBundle.LoadFromStream(bundleStream);
-        bundleStream?.Close();
-
-        gameObject.AddComponent<NotificationLib>();
-
         trackerWebSocket.OnMessage += (sender, messageEventArgs) =>
                                       {
                                           lock (receivedMessages)
@@ -53,15 +52,63 @@ public class Plugin : BaseUnityPlugin
 
         trackerWebSocket.OnClose += (sender, closeEventArgs) => trackerWebSocket.ConnectAsync();
         trackerWebSocket.ConnectAsync();
+        
+        #if GC_TRACKER
+        #else
+        StartCoroutine(FetchData());
+#endif
+    }
+
+    private IEnumerator FetchData()
+    {
+        UnityWebRequest request = UnityWebRequest.Get("https://hamburbur.org/data");
+        yield return request.SendWebRequest();
+        
+        if (request.result != UnityWebRequest.Result.Success)
+            yield break;
+        
+        cachedData = JObject.Parse(request.downloadHandler.text);
     }
 
     private void ParseAndReceiveMessage(string data)
     {
         TrackingData trackingData = JObject.Parse(data).ToObject<TrackingData>();
-        NotificationLib.Instance.SendNotification(
-                $"[<color=green>Tracker</color>] {(trackingData.IsUserKnown ? trackingData.Username : "Someone")} {(trackingData.HasSpecialCosmetic ? $"with {trackingData.SpecialCosmetic}" : "")} found in {(PhotonNetwork.InRoom && PhotonNetwork.CurrentRoom.Name == trackingData.RoomCode ? "your code" : $"code {trackingData.RoomCode}")} with {trackingData.PlayersInRoom}/10 players. Their in game name is {trackingData.InGameName} and the gamemode string is {trackingData.GameModeString}",
+        NotificationController.SendNotification("<color=green>Tracker</color>",
+                $"{(trackingData.IsUserKnown ? trackingData.Username : "Someone")} {(trackingData.HasSpecialCosmetic ? $"with {trackingData.SpecialCosmetic}" : "")} found in {(PhotonNetwork.InRoom && PhotonNetwork.CurrentRoom.Name == trackingData.RoomCode ? "your code" : $"code {trackingData.RoomCode}")} with {trackingData.PlayersInRoom}/10 players. Their in game name is {trackingData.InGameName} and the gamemode string is {trackingData.GameModeString}",
                 10f);
     }
+
+    [HarmonyPatch(typeof(VRRig))]
+    [HarmonyPatch("IUserCosmeticsCallback.OnGetUserCosmetics", MethodType.Normal)]
+    private static class OnRigCosmeticsLoadedPatch
+    {
+        private static void Postfix(VRRig __instance)
+        {
+            string specialCosmetic = cachedData["specialCosmetics"].ToObject<Dictionary<string, string>>()
+                                                     .Where(cosmeticData => __instance.HasCosmetic(cosmeticData.Key))
+                                                     .Aggregate("",
+                                                              (current, cosmeticData) =>
+                                                                      current + cosmeticData.Value + ", ");
+
+            specialCosmetic = specialCosmetic.TrimEnd(',', ' ');
+            specialCosmetic = specialCosmetic.Trim();
+
+            string username = cachedData["knownPeople"].ToObject<Dictionary<string, string>>()
+                                                        .GetValueOrDefault(__instance.OwningNetPlayer.UserId, "");
+
+            if (string.IsNullOrWhiteSpace(specialCosmetic) && string.IsNullOrWhiteSpace(username))
+                return;
+
+            TrackingData trackingData = new(!string.IsNullOrWhiteSpace(username),
+                    !string.IsNullOrWhiteSpace(specialCosmetic), username, specialCosmetic,
+                    __instance.OwningNetPlayer.SanitizedNickName, PhotonNetwork.CurrentRoom.Name,
+                    PhotonNetwork.CurrentRoom.PlayerCount, NetworkSystem.Instance.GameModeString);
+            NotificationController.SendNotification("<color=green>Tracker</color>",
+                    $"{(trackingData.IsUserKnown ? trackingData.Username : "Someone")} {(trackingData.HasSpecialCosmetic ? $"with {trackingData.SpecialCosmetic}" : "")} found in {(PhotonNetwork.InRoom && PhotonNetwork.CurrentRoom.Name == trackingData.RoomCode ? "your code" : $"code {trackingData.RoomCode}")} with {trackingData.PlayersInRoom}/10 players. Their in game name is {trackingData.InGameName} and the gamemode string is {trackingData.GameModeString}",
+                    10f);
+        }
+    }
+
 
     [Serializable]
     private class TrackingData(

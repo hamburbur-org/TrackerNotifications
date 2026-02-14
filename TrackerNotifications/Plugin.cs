@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using BepInEx;
 using GorillaNotifications;
+using GorillaNotifications.Core;
 using HarmonyLib;
 using Newtonsoft.Json.Linq;
 using Photon.Pun;
@@ -75,7 +76,7 @@ public class Plugin : BaseUnityPlugin
         TrackingData trackingData = JObject.Parse(data).ToObject<TrackingData>();
         NotificationController.SendNotification("<color=green>Tracker</color>",
                 $"{(trackingData.IsUserKnown ? trackingData.Username : "Someone")} {(trackingData.HasSpecialCosmetic ? $"with {trackingData.SpecialCosmetic}" : "")} found in {(PhotonNetwork.InRoom && PhotonNetwork.CurrentRoom.Name == trackingData.RoomCode ? "your code" : $"code {trackingData.RoomCode}")} with {trackingData.PlayersInRoom}/10 players. Their in game name is {trackingData.InGameName} and the gamemode string is {trackingData.GameModeString}",
-                10f);
+                10f, FontType.Bit_Cell, StylingOptions.BlackBox);
     }
 
     [HarmonyPatch(typeof(VRRig))]
@@ -105,7 +106,7 @@ public class Plugin : BaseUnityPlugin
                     PhotonNetwork.CurrentRoom.PlayerCount, NetworkSystem.Instance.GameModeString);
             NotificationController.SendNotification("<color=green>Tracker</color>",
                     $"{(trackingData.IsUserKnown ? trackingData.Username : "Someone")} {(trackingData.HasSpecialCosmetic ? $"with {trackingData.SpecialCosmetic}" : "")} found in {(PhotonNetwork.InRoom && PhotonNetwork.CurrentRoom.Name == trackingData.RoomCode ? "your code" : $"code {trackingData.RoomCode}")} with {trackingData.PlayersInRoom}/10 players. Their in game name is {trackingData.InGameName} and the gamemode string is {trackingData.GameModeString}",
-                    10f);
+                    10f, FontType.Bit_Cell, StylingOptions.BlackBox);
         }
     }
 

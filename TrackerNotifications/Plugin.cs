@@ -73,9 +73,9 @@ public class Plugin : BaseUnityPlugin
 
     private void ParseAndReceiveMessage(string data)
     {
-        TrackingData trackingData = JObject.Parse(data).ToObject<TrackingData>();
+        JObject trackingData = JObject.Parse(data);
         NotificationController.SendNotification("<color=green>Tracker</color>",
-                $"{(trackingData.IsUserKnown ? trackingData.Username : "Someone")} {(trackingData.HasSpecialCosmetic ? $"with {trackingData.SpecialCosmetic}" : "")} found in {(PhotonNetwork.InRoom && PhotonNetwork.CurrentRoom.Name == trackingData.RoomCode ? "your code" : $"code {trackingData.RoomCode}")} with {trackingData.PlayersInRoom}/10 players. Their in game name is {trackingData.InGameName} and the gamemode string is {trackingData.GameModeString}",
+                $"{(trackingData["isUserKnown"].ToObject<bool>() ? trackingData["username"].ToObject<string>() : "Someone")} {(trackingData["hasSpeecialCosmetic"].ToObject<bool>() ? $"with {trackingData["specialCosmetic"].ToObject<string>()}" : "")} found in {(PhotonNetwork.InRoom && PhotonNetwork.CurrentRoom.Name == trackingData["roomCode"].ToObject<string>() ? "your code" : $"code {trackingData["roomCode"].ToObject<string>()}")} with {trackingData["playersInRoom"].ToObject<int>()} players. Their in game name is {trackingData["inGameName"].ToObject<string>()} and the gamemode string is {trackingData["gameModeString"].ToObject<string>()}",
                 10f, FontType.Bit_Cell, StylingOptions.BlackBox);
     }
 
@@ -100,35 +100,22 @@ public class Plugin : BaseUnityPlugin
             if (string.IsNullOrWhiteSpace(specialCosmetic) && string.IsNullOrWhiteSpace(username))
                 return;
 
-            TrackingData trackingData = new(!string.IsNullOrWhiteSpace(username),
-                    !string.IsNullOrWhiteSpace(specialCosmetic), username, specialCosmetic,
-                    __instance.OwningNetPlayer.SanitizedNickName, PhotonNetwork.CurrentRoom.Name,
-                    PhotonNetwork.CurrentRoom.PlayerCount, NetworkSystem.Instance.GameModeString);
+            JObject trackingData = new()
+            {
+                    {"isUserKnown", !string.IsNullOrWhiteSpace(username)},
+                    {"username", username},
+                    {"hasSpecialCosmetic", !string.IsNullOrWhiteSpace(specialCosmetic)},
+                    {"specialCosmetic", specialCosmetic},
+                    {"roomCode", PhotonNetwork.CurrentRoom.Name},
+                    {"playersInRoom", PhotonNetwork.CurrentRoom.PlayerCount},
+                    {"inGameName", __instance.OwningNetPlayer.NickName},
+                    {"gameModeString", NetworkSystem.Instance.GameModeString},
+                    {"userId", __instance.OwningNetPlayer.UserId},
+            };
+            
             NotificationController.SendNotification("<color=green>Tracker</color>",
-                    $"{(trackingData.IsUserKnown ? trackingData.Username : "Someone")} {(trackingData.HasSpecialCosmetic ? $"with {trackingData.SpecialCosmetic}" : "")} found in {(PhotonNetwork.InRoom && PhotonNetwork.CurrentRoom.Name == trackingData.RoomCode ? "your code" : $"code {trackingData.RoomCode}")} with {trackingData.PlayersInRoom}/10 players. Their in game name is {trackingData.InGameName} and the gamemode string is {trackingData.GameModeString}",
+                    $"{(trackingData["isUserKnown"].ToObject<bool>() ? trackingData["username"].ToObject<string>() : "Someone")} {(trackingData["hasSpeecialCosmetic"].ToObject<bool>() ? $"with {trackingData["specialCosmetic"].ToObject<string>()}" : "")} found in {(PhotonNetwork.InRoom && PhotonNetwork.CurrentRoom.Name == trackingData["roomCode"].ToObject<string>() ? "your code" : $"code {trackingData["roomCode"].ToObject<string>()}")} with {trackingData["playersInRoom"].ToObject<int>()} players. Their in game name is {trackingData["inGameName"].ToObject<string>()} and the gamemode string is {trackingData["gameModeString"].ToObject<string>()}",
                     10f, FontType.Bit_Cell, StylingOptions.BlackBox);
         }
-    }
-
-
-    [Serializable]
-    private class TrackingData(
-            bool   isUserKnown,
-            bool   hasSpecialCosmetic,
-            string username,
-            string specialCosmetic,
-            string inGameName,
-            string roomCode,
-            int    playersInRoom,
-            string gameModeString)
-    {
-        public readonly string GameModeString     = gameModeString;
-        public readonly bool   HasSpecialCosmetic = hasSpecialCosmetic;
-        public readonly string InGameName         = inGameName;
-        public readonly bool   IsUserKnown        = isUserKnown;
-        public readonly int    PlayersInRoom      = playersInRoom;
-        public readonly string RoomCode           = roomCode;
-        public readonly string SpecialCosmetic    = specialCosmetic;
-        public readonly string Username           = username;
     }
 }

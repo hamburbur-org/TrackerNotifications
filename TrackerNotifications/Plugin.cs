@@ -75,7 +75,7 @@ public class Plugin : BaseUnityPlugin
     {
         JObject trackingData = JObject.Parse(data);
         NotificationController.SendNotification("<color=green>Tracker</color>",
-                $"{(trackingData["isUserKnown"].ToObject<bool>() ? trackingData["username"].ToObject<string>() : "Someone")} {(trackingData["hasSpeecialCosmetic"].ToObject<bool>() ? $"with {trackingData["specialCosmetic"].ToObject<string>()}" : "")} found in {(PhotonNetwork.InRoom && PhotonNetwork.CurrentRoom.Name == trackingData["roomCode"].ToObject<string>() ? "your code" : $"code {trackingData["roomCode"].ToObject<string>()}")} with {trackingData["playersInRoom"].ToObject<int>()} players. Their in game name is {trackingData["inGameName"].ToObject<string>()} and the gamemode string is {trackingData["gameModeString"].ToObject<string>()}",
+                $"{(trackingData["isUserKnown"].ToObject<bool>() ? trackingData["username"].ToObject<string>() : "Someone")} {(trackingData["hasSpecialCosmetic"].ToObject<bool>() ? $"with {trackingData["specialCosmetic"].ToObject<string>()}" : "")} found in {(PhotonNetwork.InRoom && PhotonNetwork.CurrentRoom.Name == trackingData["roomCode"].ToObject<string>() ? "your code" : $"code {trackingData["roomCode"].ToObject<string>()}")} with {trackingData["playersInRoom"].ToObject<int>()} players. Their in game name is {trackingData["inGameName"].ToObject<string>()} and the gamemode string is {trackingData["gameModeString"].ToObject<string>()}",
                 10f, FontType.Bit_Cell, StylingOptions.BlackBox);
     }
 
@@ -114,7 +114,7 @@ public class Plugin : BaseUnityPlugin
             };
             
             NotificationController.SendNotification("<color=green>Tracker</color>",
-                    $"{(trackingData["isUserKnown"].ToObject<bool>() ? trackingData["username"].ToObject<string>() : "Someone")} {(trackingData["hasSpeecialCosmetic"].ToObject<bool>() ? $"with {trackingData["specialCosmetic"].ToObject<string>()}" : "")} found in {(PhotonNetwork.InRoom && PhotonNetwork.CurrentRoom.Name == trackingData["roomCode"].ToObject<string>() ? "your code" : $"code {trackingData["roomCode"].ToObject<string>()}")} with {trackingData["playersInRoom"].ToObject<int>()} players. Their in game name is {trackingData["inGameName"].ToObject<string>()} and the gamemode string is {trackingData["gameModeString"].ToObject<string>()}",
+                    $"{(trackingData["isUserKnown"].ToObject<bool>() ? trackingData["username"].ToObject<string>() : "Someone")} {(trackingData["hasSpecialCosmetic"].ToObject<bool>() ? $"with {trackingData["specialCosmetic"].ToObject<string>()}" : "")} found in {(PhotonNetwork.InRoom && PhotonNetwork.CurrentRoom.Name == trackingData["roomCode"].ToObject<string>() ? "your code" : $"code {trackingData["roomCode"].ToObject<string>()}")} with {trackingData["playersInRoom"].ToObject<int>()} players. Their in game name is {trackingData["inGameName"].ToObject<string>()} and the gamemode string is {trackingData["gameModeString"].ToObject<string>()}",
                     10f, FontType.Bit_Cell, StylingOptions.BlackBox);
         }
     }
